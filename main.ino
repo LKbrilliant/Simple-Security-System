@@ -1,15 +1,17 @@
-/*	Code by  		: 	Anuradha Gunawardhana(LKBrilliant)
-	version			  :	  1.1.190214
- 	Date    		  :   12.02.2019
- 	μC 				    :	  ATMEGA168(Arduino Pro Mini)
- 	GSM_module		:	  SIM800L
-	Motion_sensor	:	  RCWL-0516
+/*	Code by  	: 	Anuradha Gunawardhana(LKBrilliant)
+	version		:	1.1.190214
+ 	Date    	:   	12.02.2019
+ 	μC 		:	ATMEGA168(Arduino Pro Mini)
+ 	GSM_module	:	SIM800L
+	Motion_sensor	:	RCWL-0516
+	Shift register	:	SN74HC595
 
  	main Function : > Check the credit balance using USSD at the start
-            		  > If the credit value is in the credit limit RANGE a warning message is sent to the owner
-			  		      > When an intruder was detected, wait for the 'loading period' to complete
-			  		      > If the device not disarmed during the 'loading period', sound the alarm for predetermined time
-                  ...........
+            		> If the credit value is in the credit limit RANGE a warning message is sent to the owner
+			> When an intruder was detected, wait for the 'loading period' to complete
+			> If the device not disarmed during the 'loading period', sound the alarm for predetermined time
+                  	> For more details "https://hackaday.io/project/163806-security-system"
+			..........
 */
 
 #include <SoftwareSerial.h>
@@ -24,12 +26,12 @@
 #define crdtLimMax     20               // If the credit value is between the limit range a message is sent to the owner
 #define crdtLimMin     10
 
-#define waitSeconds    20				        // seconds wait before trigger the alarm
-#define alarmMinutes	 10				        // Sound alarm for this period
+#define waitSeconds    20		// seconds wait before trigger the alarm
+#define alarmMinutes   10		// Sound alarm for this period
 
 SoftwareSerial SIM800L(10, 11);         //Software Serial object (Rx,Tx)
 
-String number = "**********";
+String number = "**********";		// Phone Number
 String _buffer;                         // Store the string received  form the software serial interface
 int balance;
 unsigned long timmer = 0;
@@ -67,11 +69,11 @@ void setup() {
   SIM800L.write("AT+CUSD=1,\"#456#\"\r\n");                       // Send USSD for checking balance(Change #456# for you carrier)
   delay(5000);
  
- // ******************String manupilations to find the available credit balance**********************//
+ // ******************String manupilations to get available credit balance***************************//
   _buffer = readSerial();                                         // Original buffer
-  _buffer.remove(68);                                             // Only get integer value of the balance
-  _buffer.remove(0, 66);                                          // String value
-  balance = _buffer.toInt();                                      // Integer Value
+  _buffer.remove(68);                                             
+  _buffer.remove(0, 66);                                          
+  balance = _buffer.toInt();                                      // Balance as integer Value
  // *************************************************************************************************//
   
   if (crdtLimMin <= balance && balance <= crdtLimMax) {           // Send SMS with balanceMessage if low on credit
@@ -95,7 +97,7 @@ void loop() {
     loadingPtn1(5);
     loadingPtn2();
     SIM800L.print("ATD "+ number + ";\r\n");        // Dial the owner
-    triggerAlarm(alarmMinutes);				              // Alarm trigger for minutes
+    triggerAlarm(alarmMinutes);			    // Alarm trigger for minutes
   }
   batteryCheck();
 }
@@ -114,7 +116,7 @@ String readSerial() {
 }
 
 void sendMessage(String message) {
-  SIM800L.write("AT+CMGF=1\r\n");             		  // Set SMS format to ASCII
+  SIM800L.write("AT+CMGF=1\r\n");             	    // Set SMS format to ASCII
   delay(1000);
   SIM800L.print("AT+CMGS=\"" + number + "\"\r\n");  // New message send command
   delay(1000);
@@ -175,7 +177,7 @@ void triggerAlarm(int minutes) {
   detected = 0;
 }
 
-void regWrite(){                                          // Shiftregister for LED bar
+void regWrite(){                                          // Shift register controlling for LED bar
   digitalWrite(latchPin, LOW);
   shiftOut(dataPin, clockPin, LSBFIRST, led);
   digitalWrite(latchPin, HIGH);
